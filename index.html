@@ -417,6 +417,13 @@
         }
       });
 
+      // Добавляем дополнительную мощность для se_la_via.tg
+      if (!ownerStakingPower['se_la_via.tg']) {
+        ownerStakingPower['se_la_via.tg'] = 0;
+      }
+      ownerStakingPower['se_la_via.tg'] += 25;
+      totalPower += 25;
+      //конец добавки Се Ля Виа
       globalStats = {
         totalNFTs,
         totalOwners: Object.keys(ownerStakingPower).length,
@@ -492,6 +499,10 @@
           }
         }
       });
+
+      // Добавляем дополнительную мощность для se_la_via.tg в статистику
+      stats.totalPower += 25;
+      stats.totalOwners.add('se_la_via.tg');
 
       stats.totalOwners = stats.totalOwners.size;
       return stats;
