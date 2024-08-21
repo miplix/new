@@ -361,7 +361,7 @@
     }
 
     function shouldIncludeNFT(title, owner) {
-      const excludeWords = ['passport', 'egg', 'yupik - chiter', 'тест', 'boost'];
+      const excludeWords = ['passport', 'egg', 'yupik - chiter', 'тест', 'boost', 'null'];
       return !excludeWords.some(word => title ? title.toLowerCase().includes(word.toLowerCase()) : false) &&
              owner !== 'darai_nft.near';
     }
