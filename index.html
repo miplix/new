@@ -1,531 +1,464 @@
 
-<html><head><base href="https://websimcreationengine.example.com/nftviewer/">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NFT Staking Power Leaderboard</title>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<style>
-  :root {
-    --primary-color: #6c5ce7;
-    --secondary-color: #a29bfe;
-    --bg-color: #2d3436;
-    --text-color: #dfe6e9;
-    --accent-color: #00b894;
-    --card-bg: #34495e;
-    --card-hover: #2c3e50;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Roboto', sans-serif;
-    line-height: 1.4;
-    color: var(--text-color);
-    background-color: var(--bg-color);
-    padding: 10px;
-    font-size: 12px;
-  }
-  .container {
-    max-width: 100%;
-    margin: 0 auto;
-    overflow-x: hidden;
-  }
-  .header {
-    text-align: center;
-    padding: 10px 0;
-    background-color: rgba(108, 92, 231, 0.1);
-    border-radius: 10px;
-    margin-bottom: 15px;
-  }
-  .logo {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 10px;
-  }
-  h1, h2, h3 {
-    color: var(--secondary-color);
-    margin-bottom: 10px;
-  }
-  h1 { font-size: 1.5em; }
-  h2 { font-size: 1.3em; }
-  h3 { font-size: 1.1em; }
-  .stats-container {
-    background-color: rgba(162, 155, 254, 0.1);
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 10px;
-  }
-  .stat-category {
-    background-color: var(--card-bg);
-    border-radius: 8px;
-    padding: 10px;
-    transition: all 0.3s ease;
-  }
-  .stat-category:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 184, 148, 0.2);
-    background-color: var(--card-hover);
-  }
-  .stat-title {
-    font-weight: bold;
-    margin-bottom: 8px;
-    color: var(--accent-color);
-    font-size: 1em;
-    text-align: center;
-  }
-  .stat-content {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
-    gap: 5px;
-  }
-  .stat-item {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding: 5px;
-    text-align: center;
-    transition: all 0.3s ease;
-  }
-  .stat-item:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
-  }
-  .stat-label {
-    font-size: 0.8em;
-    color: var(--secondary-color);
-    margin-bottom: 2px;
-  }
-  .stat-value {
-    font-size: 0.9em;
-    font-weight: bold;
-    color: var(--text-color);
-  }
-  .search-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 15px;
-  }
-  input, button {
-    padding: 8px;
-    border: none;
-    border-radius: 6px;
-    font-size: 12px;
-  }
-  input {
-    flex-grow: 1;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-color);
-    transition: all 0.3s ease;
-  }
-  input:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--accent-color);
-    background-color: rgba(255, 255, 255, 0.2);
-  }
-  button {
-    background-color: var(--accent-color);
-    color: var(--bg-color);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: bold;
-  }
-  button:hover {
-    background-color: #00a187;
-    transform: translateY(-2px);
-    box-shadow: 0 2px 4px rgba(0, 184, 148, 0.3);
-  }
-  table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 4px;
-    margin-bottom: 15px;
-    font-size: 0.9em;
-  }
-  th, td {
-    padding: 8px;
-    text-align: left;
-  }
-  th {
-    background-color: var(--primary-color);
-    color: var(--bg-color);
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  tr {
-    background-color: rgba(255, 255, 255, 0.05);
-    transition: all 0.3s ease;
-  }
-  tr:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    transform: scale(1.01);
-  }
-  #loadingOverlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(45, 52, 54, 0.8);
-    z-index: 1000;
-  }
-  .loader {
-    border: 3px solid var(--secondary-color);
-    border-top: 3px solid var(--accent-color);
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    animation: spin 1s linear infinite;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    margin-top: -15px;
-    margin-left: -15px;
-  }
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  @media (min-width: 768px) {
-    body { font-size: 14px; }
-    .container { padding: 0 15px; }
-    .stats-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-  }
-</style>
-</head>
-<body>
-  <div class="container">
-    <header class="header">
-    <a href="https://ibb.co/V94NrjW"><img src="https://i.ibb.co/V94NrjW/1000006545.png" alt="1000006545" border="0" /></a>  
-    <h1>YupLand NFT Стейкинг</h1>
-    </header>
-    
-    <section class="stats-container">
-      <h2>Статистика NFT</h2>
-      <div class="stats-grid">
-        <div class="stat-category">
-          <div class="stat-title">Общая статистика</div>
-          <div class="stat-content">
-            <div class="stat-item">
-              <div class="stat-label">NFT</div>
-              <div class="stat-value" id="totalNFTs">0</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">Владельцы</div>
-              <div class="stat-value" id="totalOwners">0</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">Мощность</div>
-              <div class="stat-value" id="totalPower">0%</div>
-            </div>
-          </div>
-        </div>
-        <div class="stat-category">
-          <div class="stat-title">Партнерские NFT</div>
-          <div class="stat-content">
-            <div class="stat-item">
-              <div class="stat-label">0 пок.</div>
-              <div class="stat-value" id="gen0">0</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">1 пок.</div>
-              <div class="stat-value" id="gen1">0</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">2 пок.</div>
-              <div class="stat-value" id="gen2">0</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">3 пок.</div>
-              <div class="stat-value" id="gen3">0</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">4 пок.</div>
-              <div class="stat-value" id="gen4">0</div>
-            </div>
-          </div>
-        </div>
-        <div class="stat-category">
-          <div class="stat-title">NFT сообщества</div>
-          <div class="stat-content">
-            <div class="stat-item">
-              <div class="stat-label">Лег</div>
-              <div class="stat-value" id="legendary">0</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">Эпик</div>
-              <div class="stat-value" id="epic">0</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">Рар</div>
-              <div class="stat-value" id="rare">0</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">Анк</div>
-              <div class="stat-value" id="uncommon">0</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">Каммон</div>
-              <div class="stat-value" id="common">0</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    
-    <section class="search-container">
-      <input type="text" id="searchInput" placeholder="Поиск по кошельку...">
-      <input type="number" id="allocationInput" placeholder="Аллокация Darai (млн)" value="100">
-      <button id="refreshButton">Обновить</button>
-    </section>
-    
-    <section>
-      <h2>Лидерборд</h2>
-      <div style="overflow-x: auto;">
-        <table id="leaderboardTable">
-          <thead>
-            <tr>
-              <th>Место</th>
-              <th>Кошелек</th>
-              <th>Мощность</th>
-              <th>DarAI</th>
-            </tr>
-          </thead>
-          <tbody id="leaderboardBody"></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
+<html><head><base href="https://example.com"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>YupLand NFT Power Dashboard</title><style>
+    :root {
+        --primary-color: #4a5568;
+        --secondary-color: #718096;
+        --background-color: #1a202c;
+        --text-color: #e2e8f0;
+        --card-background: #2d3748;
+        --border-radius: 8px;
+        --highlight-color: #6b46c1;
+    }
 
-  <div id="loadingOverlay">
-    <div class="loader"></div>
-  </div>
+    body {
+        font-family: 'Inter', sans-serif;
+        line-height: 1.6;
+        color: var(--text-color);
+        background-color: var(--background-color);
+        margin: 0;
+        padding: 20px;
+    }
 
-  <script>
-    const stakingPowerMapping = {
-      '0': 100, '1': 50, '2': 25, '3': 12.5, '4': 6.25,
-      'legendary': 3.125, 'epic': 1.5625, 'rare': 0.78125,
-      'uncommon': 0.390625, 'common': 0.1953125
-    };
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
 
-    let globalNFTData = [];
-    let globalStats = {
-      totalNFTs: 0,
-      totalOwners: 0,
-      totalPower: 0,
-      nftTypes: {
-        gen0: 0, gen1: 0, gen2: 0, gen3: 0, gen4: 0,
-        legendary: 0, epic: 0, rare: 0, uncommon: 0, common: 0
-      }
-    };
+    h1 {
+        color: var(--primary-color);
+        text-align: center;
+        font-size: 32px;
+        margin-bottom: 30px;
+        font-weight: 600;
+    }
 
-    function showLoading() { document.getElementById('loadingOverlay').style.display = 'block'; }
-    function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+    .dashboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
 
-    async function fetchNFTData() {
-      const url = 'https://graph.mintbase.xyz/mainnet';
-      const query = `
-        query {
-          mb_views_nft_tokens(
-            where: {nft_contract_id: {_eq: "darai.mintbase1.near"}}
-          ) {
-            owner
-            title
-          }
+    .dashboard-item {
+        background-color: var(--card-background);
+        border-radius: var(--border-radius);
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+    .dashboard-item:hover {
+        transform: translateY(-5px);
+    }
+
+    .dashboard-item h3 {
+        font-size: 16px;
+        margin-bottom: 10px;
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    .dashboard-item p {
+        font-size: 24px;
+        font-weight: 600;
+        margin: 0;
+        color: var(--highlight-color);
+    }
+
+    .nft-types {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .nft-type {
+        background-color: var(--card-background);
+        border-radius: var(--border-radius);
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .nft-type h3 {
+        font-size: 18px;
+        margin-bottom: 15px;
+        color: var(--primary-color);
+        font-weight: 500;
+        text-align: center;
+    }
+
+    .nft-type-items {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 10px;
+    }
+
+    .nft-type-item {
+        background-color: #3a4a5e;
+        border-radius: var(--border-radius);
+        padding: 10px;
+        font-size: 14px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 80px;
+    }
+
+    .nft-type-item span:first-child {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: var(--highlight-color);
+    }
+
+    .filter-section {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .filter-input {
+        flex: 1;
+        min-width: 200px;
+        padding: 12px;
+        border: 1px solid #4a5568;
+        border-radius: var(--border-radius);
+        font-size: 16px;
+        background-color: #2d3748;
+        color: var(--text-color);
+    }
+
+    .calculate-btn {
+        background-color: var(--highlight-color);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+    }
+
+    .calculate-btn:hover {
+        background-color: #553c9a;
+    }
+
+    .address-list {
+        display: table;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+    }
+
+    .address-item {
+        display: table-row;
+        background-color: var(--card-background);
+        transition: transform 0.3s ease;
+    }
+
+    .address-item > div {
+        display: table-cell;
+        padding: 15px;
+        vertical-align: middle;
+    }
+
+    .address-item:hover {
+        transform: translateY(-3px);
+    }
+
+    .address-item.first > div {
+        background-color: rgba(255, 215, 0, 0.1);
+    }
+
+    .address-item.second > div {
+        background-color: rgba(192, 192, 192, 0.1);
+    }
+
+    .address-item.third > div {
+        background-color: rgba(205, 127, 50, 0.1);
+    }
+
+    .address {
+        font-weight: 500;
+    }
+
+    .total-power, .reward {
+        font-weight: 600;
+        color: var(--highlight-color);
+        text-align: right;
+    }
+
+    #loading {
+        text-align: center;
+        font-size: 18px;
+        margin-top: 30px;
+        color: var(--primary-color);
+    }
+
+    #error {
+        color: #e74c3c;
+        text-align: center;
+        font-weight: bold;
+        background-color: #2d3748;
+        padding: 15px;
+        border-radius: var(--border-radius);
+        margin-top: 30px;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard, .nft-types, .filter-section {
+            grid-template-columns: 1fr;
         }
-      `;
 
-      try {
-        const response = await axios.post(url, { query }, {
-          headers: { 'mb-api-key': 'anon' }
+        .filter-input, .calculate-btn {
+            width: 100%;
+        }
+
+        .address-item {
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        .address-item > div {
+            display: block;
+            text-align: left;
+        }
+
+        .total-power, .reward {
+            text-align: left;
+        }
+    }
+</style></head><body>
+    <div class="container">
+        <h1>YupLand NFT Power Dashboard</h1>
+        
+        <div class="dashboard">
+            <div class="dashboard-item">
+                <h3>Total Holders</h3>
+                <p id="total-holders">0</p>
+            </div>
+            <div class="dashboard-item">
+                <h3>Total NFTs</h3>
+                <p id="total-nfts">0</p>
+            </div>
+            <div class="dashboard-item">
+                <h3>Total Power</h3>
+                <p id="total-power">0%</p>
+            </div>
+        </div>
+
+        <div class="nft-types">
+            <div class="nft-type">
+                <h3>Partner NFTs</h3>
+                <div class="nft-type-items">
+                    <div class="nft-type-item" id="nft-0"><span>0</span><span>0</span></div>
+                    <div class="nft-type-item" id="nft-1"><span>1</span><span>0</span></div>
+                    <div class="nft-type-item" id="nft-2"><span>2</span><span>0</span></div>
+                    <div class="nft-type-item" id="nft-3"><span>3</span><span>0</span></div>
+                    <div class="nft-type-item" id="nft-4"><span>4</span><span>0</span></div>
+                </div>
+            </div>
+            <div class="nft-type">
+                <h3>Community NFTs</h3>
+                <div class="nft-type-items">
+                    <div class="nft-type-item" id="nft-legendary"><span>Legendary</span><span>0</span></div>
+                    <div class="nft-type-item" id="nft-epic"><span>Epic</span><span>0</span></div>
+                    <div class="nft-type-item" id="nft-rare"><span>Rare</span><span>0</span></div>
+                    <div class="nft-type-item" id="nft-uncommon"><span>Uncommon</span><span>0</span></div>
+                    <div class="nft-type-item" id="nft-common"><span>Common</span><span>0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <input type="text" id="address-filter" class="filter-input" placeholder="Filter by address">
+            <input type="number" id="allocation-input" class="filter-input" placeholder="Allocation amount (million)" value="100">
+            <button id="calculate-btn" class="calculate-btn">Calculate</button>
+        </div>
+
+        <div id="loading">Loading data...</div>
+        <div id="error" style="display: none;"></div>
+        <div id="nft-data" class="address-list"></div>
+    </div>
+
+    <script>
+        let allNFTs = [];
+        let totalPower = 0;
+        let rewardPerPercent = 0;
+
+        async function fetchNFTs() {
+            let page = 1;
+            const perPage = 25;
+            let hasMore = true;
+            const loadingElement = document.getElementById('loading');
+            const errorElement = document.getElementById('error');
+            
+            const excludedOwners = [
+                '0000000000000000000000000000000000000000000000000000000000000000',
+                'darai_nft.near',
+                'darai_collection.near'
+            ];
+
+            const excludedTitles = ['egg', 'passport', 'Yupik - Chiter', 'Chest', 'Press', 'тест', 'boost', 'mystical'];
+
+            const powerLevels = {
+                '0': 100,
+                '1': 50,
+                '2': 25,
+                '3': 12.5,
+                '4': 6.25,
+                'legendary': 3.125,
+                'epic': 1.5625,
+                'rare': 0.78125,
+                'uncommon': 0.390625,
+                'common': 0.1953125
+            };
+
+            while (hasMore) {
+                try {
+                    const response = await fetch(`https://api.nearblocks.io/v1/nfts/darai.mintbase1.near/tokens?page=${page}&per_page=${perPage}`);
+                    const data = await response.json();
+
+                    if (data && data.tokens && data.tokens.length > 0) {
+                        const filteredData = data.tokens
+                            .filter(token => {
+                                if (!token.title) return false;
+                                const lowerTitle = token.title.toLowerCase();
+                                return !excludedTitles.some(excluded => lowerTitle.includes(excluded.toLowerCase())) &&
+                                       !excludedOwners.includes(token.asset.owner);
+                            })
+                            .map(token => {
+                                const titleLower = token.title.toLowerCase();
+                                let power = 0;
+                                for (const [key, value] of Object.entries(powerLevels)) {
+                                    if (titleLower.includes(key)) {
+                                        power = value;
+                                        break;
+                                    }
+                                }
+                                return {
+                                    title: token.title,
+                                    id: token.token || '-',
+                                    owner: token.asset.owner,
+                                    power: power
+                                };
+                            });
+
+                        allNFTs = allNFTs.concat(filteredData);
+                        page++;
+                        updateDashboard();
+                        updateNFTDisplay();
+                    } else {
+                        hasMore = false;
+                    }
+                } catch (error) {
+                    errorElement.textContent = "Error fetching data. Please try again later.";
+                    errorElement.style.display = 'block';
+                    loadingElement.style.display = 'none';
+                    console.error("Error fetching data:", error);
+                    hasMore = false;
+                }
+            }
+
+            loadingElement.style.display = 'none';
+        }
+
+        function updateDashboard(filter = '') {
+            const addressMap = new Map();
+            totalPower = 0;
+
+            allNFTs.forEach(nft => {
+                if (!filter || nft.owner.toLowerCase().includes(filter.toLowerCase())) {
+                    if (!addressMap.has(nft.owner)) {
+                        addressMap.set(nft.owner, { totalPower: 0, nfts: [] });
+                    }
+                    const addressData = addressMap.get(nft.owner);
+                    addressData.totalPower += nft.power;
+                    addressData.nfts.push(nft);
+                    totalPower += nft.power;
+                }
+            });
+
+            document.getElementById('total-holders').textContent = addressMap.size;
+            document.getElementById('total-nfts').textContent = allNFTs.filter(nft => !filter || nft.owner.toLowerCase().includes(filter.toLowerCase())).length;
+            document.getElementById('total-power').textContent = totalPower.toFixed(4) + '%';
+
+            const nftCounts = {
+                '0': 0, '1': 0, '2': 0, '3': 0, '4': 0,
+                'legendary': 0, 'epic': 0, 'rare': 0, 'uncommon': 0, 'common': 0
+            };
+
+            allNFTs.forEach(nft => {
+                if (!filter || nft.owner.toLowerCase().includes(filter.toLowerCase())) {
+                    const titleLower = nft.title.toLowerCase();
+                    for (const key of Object.keys(nftCounts)) {
+                        if (titleLower.includes(key)) {
+                            nftCounts[key]++;
+                            break;
+                        }
+                    }
+                }
+            });
+
+            for (const [key, value] of Object.entries(nftCounts)) {
+                const element = document.getElementById(`nft-${key}`);
+                if (element) {
+                    element.querySelector('span:last-child').textContent = value;
+                }
+            }
+        }
+
+        function updateNFTDisplay(filter = '') {
+            const nftDataElement = document.getElementById('nft-data');
+            const addressMap = new Map();
+
+            allNFTs.forEach(nft => {
+                if (!filter || nft.owner.toLowerCase().includes(filter.toLowerCase())) {
+                    if (!addressMap.has(nft.owner)) {
+                        addressMap.set(nft.owner, { totalPower: 0, nfts: [] });
+                    }
+                    const addressData = addressMap.get(nft.owner);
+                    addressData.totalPower += nft.power;
+                    addressData.nfts.push(nft);
+                }
+            });
+
+            const filteredAddresses = Array.from(addressMap.entries())
+                .sort((a, b) => {
+                    if (b[1].totalPower !== a[1].totalPower) {
+                        return b[1].totalPower - a[1].totalPower;
+                    }
+                    return a[0].localeCompare(b[0]);
+                });
+
+            nftDataElement.innerHTML = filteredAddresses.map(([address, data], index) => `
+                <div class="address-item ${index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : ''}">
+                    <div class="address">${index + 1}. ${address}</div>
+                    <div class="total-power">${data.totalPower.toFixed(4)}%</div>
+                    <div class="reward">${(data.totalPower * rewardPerPercent).toFixed(2)}</div>
+                </div>
+            `).join('');
+
+            updateDashboard(filter);
+        }
+
+        document.getElementById('address-filter').addEventListener('input', function(e) {
+            updateNFTDisplay(e.target.value);
         });
-        return response.data.data.mb_views_nft_tokens;
-      } catch (error) {
-        console.error('Ошибка запроса:', error.response ? `${error.response.status} - ${error.response.statusText}` : error.message);
-        return null;
-      }
-    }
 
-    function parseStakingPower(title) {
-      for (const [key, value] of Object.entries(stakingPowerMapping)) {
-        if (title.toLowerCase().includes(key.toLowerCase())) {
-          return value;
-        }
-      }
-      return 0;
-    }
-
-    function shouldIncludeNFT(title, owner) {
-      const excludeWords = ['passport', 'egg', 'yupik - chiter', 'тест', 'boost', 'null'];
-      return !excludeWords.some(word => title ? title.toLowerCase().includes(word.toLowerCase()) : false) &&
-             owner !== 'darai_nft.near';
-    }
-
-    async function updateLeaderboard() {
-      showLoading();
-      try {
-        const nftData = await fetchNFTData();
-        if (nftData) {
-          globalNFTData = nftData;
-          processAndDisplayData();
-        } else {
-          console.error('Нет данных о стейкинге');
-        }
-      } catch (error) {
-        console.error('Ошибка при получении данных:', error);
-      }
-      hideLoading();
-    }
-
-    function processAndDisplayData(searchText = '') {
-      const ownerStakingPower = {};
-      const nftTypes = {
-        gen0: 0, gen1: 0, gen2: 0, gen3: 0, gen4: 0,
-        legendary: 0, epic: 0, rare: 0, uncommon: 0, common: 0
-      };
-      let totalNFTs = 0;
-      let totalPower = 0;
-
-      globalNFTData.forEach(nft => {
-        if (nft.owner !== '0000000000000000000000000000000000000000000000000000000000000000' && 
-            shouldIncludeNFT(nft.title, nft.owner)) {
-          const stakingPower = parseStakingPower(nft.title);
-          
-          if (!ownerStakingPower[nft.owner]) {
-            ownerStakingPower[nft.owner] = 0;
-          }
-          ownerStakingPower[nft.owner] += stakingPower;
-          totalPower += stakingPower;
-          totalNFTs++;
-
-          // Count NFT types
-          for (const [key, value] of Object.entries(stakingPowerMapping)) {
-            if (nft.title.toLowerCase().includes(key.toLowerCase())) {
-              if (['0', '1', '2', '3', '4'].includes(key)) {
-                nftTypes[`gen${key}`]++;
-              } else {
-                nftTypes[key]++;
-              }
-              break;
+        document.getElementById('calculate-btn').addEventListener('click', function() {
+            const allocation = parseFloat(document.getElementById('allocation-input').value) * 1000000;
+            if (isNaN(allocation)) {
+                alert('Please enter a valid allocation amount');
+                return;
             }
-          }
-        }
-      });
+            rewardPerPercent = allocation / totalPower;
+            updateNFTDisplay(document.getElementById('address-filter').value);
+        });
 
-      // Добавляем дополнительную мощность для se_la_via.tg
-      if (!ownerStakingPower['se_la_via.tg']) {
-        ownerStakingPower['se_la_via.tg'] = 0;
-      }
-      ownerStakingPower['se_la_via.tg'] += 25;
-      totalPower += 25;
-      //конец добавки Се Ля Виа
-      globalStats = {
-        totalNFTs,
-        totalOwners: Object.keys(ownerStakingPower).length,
-        totalPower,
-        nftTypes
-      };
-
-      const allocation = parseFloat(document.getElementById('allocationInput').value) * 1000000;
-      const rewardPerPercent = allocation / totalPower;
-
-      const sortedOwners = Object.entries(ownerStakingPower)
-        .filter(([owner]) => owner.toLowerCase().includes(searchText.toLowerCase()))
-        .sort((a, b) => b[1] - a[1])
-        .map(([owner, power]) => ({
-          owner,
-          power,
-          reward: Math.floor(rewardPerPercent * power)
-        }));
-
-      updateTable(sortedOwners);
-      updateStats(searchText);
-    }
-
-    function updateTable(sortedOwners) {
-      const leaderboardBody = document.getElementById('leaderboardBody');
-      leaderboardBody.innerHTML = '';
-      sortedOwners.forEach(({owner, power, reward}, index) => {
-        const row = leaderboardBody.insertRow();
-        row.insertCell(0).innerHTML = index < 3 ? ['🏆','🥈','🥉'][index] : (index + 1);
-        row.insertCell(1).textContent = owner;
-        row.insertCell(2).textContent = power.toFixed(8).replace(/\.?0+$/, '') + '%';
-        row.insertCell(3).textContent = reward;
-      });
-    }
-
-    function updateStats(searchText) {
-      if (searchText) {
-        const filteredData = globalNFTData.filter(nft => nft.owner.toLowerCase().includes(searchText.toLowerCase()));
-        const filteredStats = calculateStats(filteredData);
-        displayStats(filteredStats);
-      } else {
-        displayStats(globalStats);
-      }
-    }
-
-    function calculateStats(data) {
-      const stats = {
-        totalNFTs: 0,
-        totalOwners: new Set(),
-        totalPower: 0,
-        nftTypes: {
-          gen0: 0, gen1: 0, gen2: 0, gen3: 0, gen4: 0,
-          legendary: 0, epic: 0, rare: 0, uncommon: 0, common: 0
-        }
-      };
-
-      data.forEach(nft => {
-        if (shouldIncludeNFT(nft.title, nft.owner)) {
-          stats.totalNFTs++;
-          stats.totalOwners.add(nft.owner);
-          const power = parseStakingPower(nft.title);
-          stats.totalPower += power;
-
-          for (const [key, value] of Object.entries(stakingPowerMapping)) {
-            if (nft.title.toLowerCase().includes(key.toLowerCase())) {
-              if (['0', '1', '2', '3', '4'].includes(key)) {
-                stats.nftTypes[`gen${key}`]++;
-              } else {
-                stats.nftTypes[key]++;
-              }
-              break;
-            }
-          }
-        }
-      });
-
-      // Добавляем дополнительную мощность для se_la_via.tg в статистику
-      stats.totalPower += 25;
-      stats.totalOwners.add('se_la_via.tg');
-
-      stats.totalOwners = stats.totalOwners.size;
-      return stats;
-    }
-
-    function displayStats(stats) {
-      document.getElementById('totalNFTs').textContent = stats.totalNFTs;
-      document.getElementById('totalOwners').textContent = stats.totalOwners;
-      document.getElementById('totalPower').textContent = stats.totalPower.toFixed(8).replace(/\.?0+$/, '') + '%';
-
-      for (const [key, value] of Object.entries(stats.nftTypes)) {
-        document.getElementById(key).textContent = value;
-      }
-    }
-
-    document.getElementById('searchInput').addEventListener('input', e => {
-      processAndDisplayData(e.target.value);
-    });
-
-    document.getElementById('refreshButton').addEventListener('click', updateLeaderboard);
-    document.getElementById('allocationInput').addEventListener('change', () => processAndDisplayData());
-
-    updateLeaderboard();
-  </script>
-</body>
-</html>
+        fetchNFTs();
+    </script>
+</body></html>
