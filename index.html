@@ -351,24 +351,55 @@
             }
         }
 
-        function updateNFTDisplay(filter = '') {
-            const nftDataElement = document.getElementById('nft-data');
+        function updateDashboardWithFilter(filter = '') {
+            const filteredNFTs = allNFTs.filter(nft => !filter || nft.owner.toLowerCase().includes(filter.toLowerCase()));
+            
             const addressMap = new Map();
+            let filteredTotalPower = 0;
+            let filteredTotalNFTs = 0;
 
-            allNFTs.forEach(nft => {
-                if (!filter || nft.owner.toLowerCase().includes(filter.toLowerCase())) {
-                    if (!addressMap.has(nft.owner)) {
-                        addressMap.set(nft.owner, { totalPower: 0, nfts: [] });
+            const nftCounts = {
+                '0': 0, '1': 0, '2': 0, '3': 0, '4': 0,
+                'legendary': 0, 'epic': 0, 'rare': 0, 'uncommon': 0, 'common': 0
+            };
+
+            filteredNFTs.forEach(nft => {
+                if (!addressMap.has(nft.owner)) {
+                    addressMap.set(nft.owner, { totalPower: 0, nfts: [] });
+                }
+                const addressData = addressMap.get(nft.owner);
+                addressData.totalPower += nft.power;
+                addressData.nfts.push(nft);
+                filteredTotalPower += nft.power;
+                filteredTotalNFTs++;
+
+                const titleLower = nft.title.toLowerCase();
+                for (const key of Object.keys(nftCounts)) {
+                    if (titleLower.includes(key)) {
+                        nftCounts[key]++;
+                        break;
                     }
-                    const addressData = addressMap.get(nft.owner);
-                    addressData.totalPower += nft.power;
-                    addressData.nfts.push(nft);
                 }
             });
 
-            filteredAddresses = Array.from(addressMap.entries())
-                .sort((a, b) => b[1].totalPower - a[1].totalPower);
+            const filteredTotalHolders = addressMap.size;
 
+            document.getElementById('total-holders').textContent = filteredTotalHolders;
+            document.getElementById('total-nfts').textContent = filteredTotalNFTs;
+            document.getElementById('total-power').textContent = filteredTotalPower.toFixed(4) + '%';
+
+            for (const [key, value] of Object.entries(nftCounts)) {
+                const element = document.getElementById(`nft-${key}`);
+                if (element) {
+                    element.textContent = value;
+                }
+            }
+
+            return Array.from(addressMap.entries()).sort((a, b) => b[1].totalPower - a[1].totalPower);
+        }
+
+        function updateNFTDisplay(filter = '') {
+            filteredAddresses = updateDashboardWithFilter(filter);
             displayAddressPage(1);
             updatePagination();
         }
@@ -425,9 +456,11 @@
                 alert('Please enter a valid allocation amount');
                 return;
             }
-            rewardPerPercent = allocation / totalPower;
+            const currentFilter = document.getElementById('address-filter').value;
+            const filteredTotalPower = updateDashboardWithFilter(currentFilter).reduce((sum, [_, data]) => sum + data.totalPower, 0);
+            rewardPerPercent = allocation / filteredTotalPower;
             currentPage = 1;
-            updateNFTDisplay(document.getElementById('address-filter').value);
+            updateNFTDisplay(currentFilter);
 
             if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
                 document.activeElement.blur();
