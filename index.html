@@ -223,11 +223,9 @@
         let filteredAddresses = [];
 
         async function fetchNFTs() {
-            const apiUrl = 'https://api.nearblocks.io/v1/nfts/darai.mintbase1.near/tokens';
-            const apiKey = '5D41C51913ED4A93A04B3DC5AB00D3DF';
-            allNFTs = [];
-            let currentPage = 1;
-            let requestCount = 0;
+            let page = 1;
+            const perPage = 250;
+            let hasMore = true;
             const loadingElement = document.getElementById('loading');
             const errorElement = document.getElementById('error');
 
@@ -254,18 +252,17 @@
                 'common': 0.1953125
             };
 
-            while (true) {
+            const API_KEY = '3E3387A5DF2B4D5EA0B9719BC5F2CA3E';
+
+            while (hasMore && allNFTs.length < 2000) {
                 try {
-                    loadingElement.textContent = `Запрос ${requestCount + 1}. Страница ${currentPage}...`;
-                    
-                    const response = await fetch(`${apiUrl}?page=${currentPage}&per_page=250`, {
+                    const response = await fetch(`https://api.nearblocks.io/v1/nfts/darai.mintbase1.near/tokens?page=${page}&per_page=${perPage}`, {
                         method: 'GET',
                         headers: {
-                            'accept': '*/*',
-                            'Authorization': `Bearer ${apiKey}`
+                            'Authorization': `Bearer ${API_KEY}`,
+                            'Accept': '*/*'
                         }
                     });
-
                     const data = await response.json();
 
                     if (data && data.tokens && data.tokens.length > 0) {
@@ -294,23 +291,22 @@
                             });
 
                         allNFTs = allNFTs.concat(filteredData);
-                        currentPage++;
-                        requestCount++;
+                        page++;
                         updateDashboard();
                         updateNFTDisplay();
                     } else {
-                        break; // Exit the loop if no more data
+                        hasMore = false;
                     }
                 } catch (error) {
                     errorElement.textContent = "Error fetching data. Please try again later.";
                     errorElement.style.display = 'block';
                     loadingElement.style.display = 'none';
                     console.error("Error fetching data:", error);
-                    break;
+                    hasMore = false;
                 }
             }
 
-            loadingElement.textContent = `Загрузка завершена. Всего запросов: ${requestCount}`;
+            loadingElement.style.display = 'none';
         }
 
         function updateDashboard() {
