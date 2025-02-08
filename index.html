@@ -182,28 +182,22 @@
         'boost',
         'mystical',
         'Ellie (0th generation - Ancient)',
-        'January-20th (rare)',
-        '456',
         'Phi-So (0th generation - Ancient)'
     ];
 
     const specialAddresses = {
-        'progrech.tg': {
-            rareTokens: 1,
-            powerBonus: 0.78125
-        },
-         'vengerliliya.tg': {
-            rareTokens: 1,
-            powerBonus: 0.78125
+        'darai_fane.near': {
+            rareTokens: 0,
+            powerBonus: 0
         }
     };
 
     const powerValues = {
-        '0': 100,
-        '1': 50,
-        '2': 25,
-        '3': 12.5,
-        '4': 6.25,
+        '(0': 100,
+        '(1': 50,
+        '(2': 25,
+        '(3': 12.5,
+        '(4': 6.25,
         'legendary': 3.125,
         'epic': 1.5625,
         'rare': 0.78125,
@@ -232,7 +226,8 @@
         
         for (const key of Object.keys(powerValues)) {
             if (title.toLowerCase().includes(key.toLowerCase())) {
-                return key;
+                // Remove parentheses for display
+                return key.replace(/[()]/g, '');
             }
         }
         return null;
@@ -285,7 +280,7 @@
         const tokenTypeCounts = {};
 
         Object.keys(powerValues).forEach(key => {
-            tokenTypeCounts[key] = 0;
+            tokenTypeCounts[key.replace(/[()]/g, '')] = 0;
         });
 
         tokens.forEach(token => {
@@ -317,7 +312,7 @@
         function updateTokenTypes(filteredTokens) {
             const filteredTypeCounts = {};
             Object.keys(powerValues).forEach(key => {
-                filteredTypeCounts[key] = 0;
+                filteredTypeCounts[key.replace(/[()]/g, '')] = 0;
             });
 
             filteredTokens.forEach(token => {
@@ -356,11 +351,13 @@
                 if (!acc[token.owner]) {
                     acc[token.owner] = {
                         tokenCount: 1 + specialBonus,
-                        totalPower: power
+                        totalPower: power,
+                        tokens: [token]
                     };
                 } else {
                     acc[token.owner].tokenCount += 1;
                     acc[token.owner].totalPower += power;
+                    acc[token.owner].tokens.push(token);
                 }
                 return acc;
             }, {});
@@ -384,6 +381,7 @@
                             const reward = calculateReward(stats.totalPower, totalPower, rewardVolume);
                             const powerDisplay = stats.totalPower.toFixed(4).replace(/\.?0+$/, '');
                             const truncatedOwner = owner.length > 20 ? owner.substring(0, 20) + '...' : owner;
+                            
                             return `
                                 <tr>
                                     <td class="number-column">${index + 1}</td>
