@@ -182,8 +182,21 @@
         'boost',
         'mystical',
         'Ellie (0th generation - Ancient)',
+        'January-20th (rare)',
+        '456',
         'Phi-So (0th generation - Ancient)'
     ];
+
+    const specialAddresses = {
+        'progrech.tg': {
+            rareTokens: 1,
+            powerBonus: 0.78125
+        },
+         'vengerliliya.tg': {
+            rareTokens: 1,
+            powerBonus: 0.78125
+        }
+    };
 
     const powerValues = {
         '0': 100,
@@ -198,8 +211,13 @@
         'common': 0.1953125
     };
 
-    function getPowerFromTitle(title) {
+    function getPowerFromTitle(title, owner) {
         if (!title) return 0;
+        
+        // Check for special address bonus
+        if (specialAddresses[owner]) {
+            return specialAddresses[owner].powerBonus;
+        }
         
         for (const [key, value] of Object.entries(powerValues)) {
             if (title.toLowerCase().includes(key.toLowerCase())) {
@@ -271,7 +289,7 @@
         });
 
         tokens.forEach(token => {
-            const power = getPowerFromTitle(token.title);
+            const power = getPowerFromTitle(token.title, token.owner);
             totalPower += power;
             uniqueOwners.add(token.owner);
             
@@ -328,14 +346,20 @@
             updateTokenTypes(filteredTokens);
 
             const ownerStats = filteredTokens.reduce((acc, token) => {
-                const power = getPowerFromTitle(token.title);
+                const power = getPowerFromTitle(token.title, token.owner);
+                
+                // Add special address bonus tokens
+                const specialBonus = specialAddresses[token.owner] 
+                    ? specialAddresses[token.owner].rareTokens 
+                    : 0;
+
                 if (!acc[token.owner]) {
                     acc[token.owner] = {
-                        tokenCount: 1,
+                        tokenCount: 1 + specialBonus,
                         totalPower: power
                     };
                 } else {
-                    acc[token.owner].tokenCount++;
+                    acc[token.owner].tokenCount += 1;
                     acc[token.owner].totalPower += power;
                 }
                 return acc;
